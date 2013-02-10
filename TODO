@@ -1,4 +1,3 @@
-* ioprio_set
 * setpriority / nice
 * rlimit
 * daemonise

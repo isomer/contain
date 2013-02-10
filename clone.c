@@ -47,6 +47,7 @@ static void change_user(void)
 
 static int child_start(void *dummy)
 {
+    do_ioprio();
     do_cgroup();
     do_capabilities();
     do_prctl();
