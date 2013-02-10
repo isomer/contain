@@ -2,13 +2,13 @@ CFLAGS?=-g -Wall -Wstrict-prototypes -Wextra
 
 PKGS:=libcgroup libselinux
 
-manager:CFLAGS+=$(shell pkg-config --cflags $(PKGS))
-manager:LDFLAGS+=$(shell pkg-config --libs-only-L --libs-only-other $(PKGS))
-manager:LDLIBS=$(shell pkg-config --libs-only-l $(PKGS)) -lcap
+contain:CFLAGS+=$(shell pkg-config --cflags $(PKGS))
+contain:LDFLAGS+=$(shell pkg-config --libs-only-L --libs-only-other $(PKGS))
+contain:LDLIBS=$(shell pkg-config --libs-only-l $(PKGS)) -lcap
 
-all: manager simple-init
+all: contain simple-init
 
-manager:manager.c caps.c cgroup.c chroot.c clone.c prctl.c selinux.c
+contain:contain.c caps.c cgroup.c chroot.c clone.c prctl.c selinux.c
 
 clean:
-	rm -f manager simple-init
+	rm -f contain simple-init
