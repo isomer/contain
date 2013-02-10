@@ -1,3 +1,4 @@
 * daemonise
 * create a session group
 * Write a doc for common useful things to do with contain
+* Make requiring a --name optional, if we're not doing anything with cgroups
