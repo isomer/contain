@@ -1,4 +1,3 @@
-* setpriority / nice
 * rlimit
 * daemonise
 * create a session group

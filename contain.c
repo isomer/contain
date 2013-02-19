@@ -41,13 +41,14 @@ parse_opt(int key, char *arg, struct argp_state *state)
 }
 
 static struct argp_child argp_children[] = {
+    { &cap_argp, 0, "Capabilities", 1 },
+    { &cgroup_argp, 0, "Limits", 1 },
     { &chroot_argp, 0, "Filesystem", 1 },
     { &clone_argp, 0, "Clone options", 1 },
-    { &prctl_argp, 0, "Security options", 1 },
-    { &cgroup_argp, 0, "Limits", 1 },
-    { &selinux_argp, 0, "SELinux", 1 },
-    { &cap_argp, 0, "Capabilities", 1 },
     { &ioprio_argp, 0, "IO Prioritisation", 1 },
+    { &nice_argp, 0, "Nice prioritisation", 1 },
+    { &prctl_argp, 0, "Security options", 1 },
+    { &selinux_argp, 0, "SELinux", 1 },
     { NULL, 0, NULL, 0 },
 };
 
