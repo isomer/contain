@@ -114,6 +114,7 @@ int setup_clone(void)
 #define STACKSIZE (32*1024)
     char *stack = malloc(STACKSIZE);
     int flags = 0;
+    int status;
     pid_t pid;
 
     flags |= CLONE_FILES; /* fork() normally shares fd's */
@@ -135,9 +136,9 @@ int setup_clone(void)
     if (pid == -1)
 	err(1, "clone()");
 
-    if (waitpid(pid, NULL, 0) == -1)
+    if (waitpid(pid, &status, 0) == -1)
 	warn("waitpid(%d)", pid);
 
-    return 0;
+    return status;
 }
 

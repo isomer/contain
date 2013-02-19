@@ -62,8 +62,6 @@ int main(int argc, char *argv[])
 
     if (!name)
 	errx(1, "You must specify a name");
+    return setup_clone();
 
-    setup_clone();
-
-    return 0;
 }
