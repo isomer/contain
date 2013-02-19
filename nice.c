@@ -8,7 +8,7 @@
 #include <err.h>
 
 static struct argp_option nice_options[] = {
-    {"nice",       20, "priority", 0, "Set process nice priority", 0},
+    {"nice",       1020, "priority", 0, "Set process nice priority", 0},
     {NULL,	   0,   0, 0, NULL, 0 },
 };
 
@@ -18,7 +18,7 @@ static bool set_nice = false;
 static error_t parse_nice_opt(int key, char *arg, struct argp_state *state)
 {
     switch(key) {
-        case 20:
+        case 1020:
             nice_value = atoi(arg);
 	    set_nice = true;
             break;
