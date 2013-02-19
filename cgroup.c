@@ -61,9 +61,17 @@ static void cgroup_err(int err, const char *fmt, ...)
 int do_cgroup(void)
 {
     struct cgroup_controller *controller;
-    struct cgroup *group = cgroup_new_cgroup(name);
+    struct cgroup *group;
     int i;
     int err;
+
+    if (!setting)
+	return 0; /* Nothing to do */
+
+    if (!name)
+	errx(1, "You must specify a name for your cgroup");
+
+    group = cgroup_new_cgroup(name);
 
     if (!group)
 	errx(1, "Failed to create cgroup %s", name);

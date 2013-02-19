@@ -60,8 +60,6 @@ int main(int argc, char *argv[])
     cgroup_init();
     argp_parse(&argp, argc, argv, 0, 0, NULL);
 
-    if (!name)
-	errx(1, "You must specify a name");
     return setup_clone();
 
 }
