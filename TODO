@@ -1,4 +1,3 @@
-* rlimit
 * daemonise
 * create a session group
 * Write a doc for common useful things to do with contain

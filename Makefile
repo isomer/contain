@@ -8,8 +8,8 @@ contain:LDLIBS=$(shell pkg-config --libs-only-l $(PKGS)) -lcap
 
 all: contain simple-init
 
-contain:contain.c caps.c cgroup.c chroot.c clone.c prctl.c nice.c selinux.c \
-	ioprio.c
+contain:contain.c caps.c cgroup.c chroot.c clone.c nice.c prctl.c rlimit.c \
+	selinux.c ioprio.c
 
 clean:
 	rm -f contain simple-init

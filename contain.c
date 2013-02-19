@@ -48,6 +48,7 @@ static struct argp_child argp_children[] = {
     { &ioprio_argp, 0, "IO Prioritisation", 1 },
     { &nice_argp, 0, "Nice prioritisation", 1 },
     { &prctl_argp, 0, "Security options", 1 },
+    { &rlimit_argp, 0, "Ulimit options", 1 },
     { &selinux_argp, 0, "SELinux", 1 },
     { NULL, 0, NULL, 0 },
 };
