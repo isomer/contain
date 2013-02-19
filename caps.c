@@ -2,6 +2,7 @@
 #include "contain.h"
 #include <sys/capability.h>
 #include <sys/prctl.h>
+#include <assert.h>
 #include <argp.h>
 #include <err.h>
 #include <stdio.h>
@@ -14,6 +15,20 @@ static struct argp_option cap_options[] = {
 };
 
 static cap_t *containcap = NULL;
+
+static int set_cap(const char *name, bool enable) 
+{
+    cap_value_t cap;
+    if (cap_from_name(name, &cap) == -1)
+	    errx(1, "Unable to parse capability %s", name);
+
+    if (cap_set_flag(*containcap, CAP_INHERITABLE, 1, &cap, enable) 
+		    == -1)
+	    err(1, "Unable to change capability %s in inheritable", 
+			    name);
+
+    return 0;
+}
 
 static error_t parse_cap_opt(int key, char *arg, struct argp_state *state)
 {
@@ -36,12 +51,14 @@ static error_t parse_cap_opt(int key, char *arg, struct argp_state *state)
 		 * If we're removing capabilities, start with what we have.
 		 */
 		containcap = malloc(sizeof(*containcap));
-		if (enable)
-		    cap_clear(*containcap);
-		else {
+		if (enable) {
+		    *containcap = cap_init();
+		    if (cap_clear(*containcap)) err(1, "cap_clear");
+		} else {
 		    *containcap = cap_get_proc();
 		}
 	    }
+	    assert(containcap);
 	    /* Parse the remainder of the string. */
 	    do {
 		char *name;
@@ -61,20 +78,7 @@ static error_t parse_cap_opt(int key, char *arg, struct argp_state *state)
 			asprintf(&name, "cap_%s", oldname);	
 			free(oldname);
 		}
-		cap_value_t cap;
-		if (cap_from_name(name, &cap) == -1)
-		    errx(1, "Unable to parse capability %s", name);
-		if (cap_set_flag(*containcap, CAP_PERMITTED, 1, &cap, enable) 
-			== -1)
-		    err(1, "Unable to change capability %s in permitted", name);
-		if (cap_set_flag(*containcap, CAP_INHERITABLE, 1, &cap, enable) 
-			== -1)
-		    err(1, "Unable to change capability %s in inheritable", 
-				name);
-		if (cap_set_flag(*containcap, CAP_PERMITTED, 1, &cap, enable) 
-			== -1)
-		    err(1, "Unable to change capability %s in permitted", 
-				name);
+		set_cap(name, enable);
 		free(name);
 	    } while (*st);
 	    break;
@@ -87,34 +91,48 @@ static error_t parse_cap_opt(int key, char *arg, struct argp_state *state)
 struct argp cap_argp = {
     cap_options, parse_cap_opt, "", "Capabilities", 0, 0, 0, };
 
+static void drop_cap(int capid)
+{
+    cap_flag_value_t isset;
+    if (cap_valid(capid)) {
+	if (cap_get_flag(*containcap, capid, CAP_INHERITABLE, &isset) == -1) {
+		/* This is usually due to libcap2 being out of date */
+	    	/*err(1, "Unable to discover capability %d", capid);*/
+		isset = true; /* Just drop the capability */
+	}
+    } else {
+	/* Dunno what this is, but we probably don't want it. */
+	isset = true;	
+    }
+    if (!isset && prctl(PR_CAPBSET_DROP, capid, 0, 0, 0) == -1)
+	err(1, "Failed to drop capability %s", cap_to_name(capid));
+}
+
 int do_capabilities(void)
 {
     if (containcap) {
 	int last_cap=0;
 	int i;
+
+	/* Find out what capabilities this kernel supports */
 	FILE *f = fopen("/proc/sys/kernel/cap_last_cap", "r");
 	if (!f)
 	    err(1, "Unable to read /proc/sys/kernel/cap_last_cap");
 	fscanf(f, "%d", &last_cap);
 	fclose(f);
 
-	printf("Proc: %s\n", cap_to_text(cap_get_proc(), NULL));
-	printf("Cap: %s\n", cap_to_text(*containcap, NULL));
+	for(i=0;i<last_cap+1;++i) {
+		/* Drop SETPCAP last */
+		if (i != CAP_SETPCAP) drop_cap(i);
+	}
+
+	/* This needs to be dropped last, otherwise I can't drop later
+	 * capabilities */
+	drop_cap(CAP_SETPCAP);
 
 	if (cap_set_proc(*containcap) == -1)
 	    err(1, "Failed to set process capabilities");
-	
-	for(i=0;i<last_cap+1;++i) {
-	    cap_flag_value_t isset;
-	    if (cap_get_flag(*containcap, i, CAP_PERMITTED, &isset) == -1)
-		err(1, "Unable to discover capability %d", i);
-	    /* I suspect I'm going to run into the problem where if I try and
-	     * drop SETPCAP that I won't be able to drop other capabilities,
-             * so I might have to reorder this
-	     */
-	    if (isset && prctl(PR_CAPBSET_DROP, i, 0, 0, 0) == -1)
-		err(1, "Failed to drop capability %d", i);
-	}
+
 	
     }
     return 0;

@@ -43,7 +43,10 @@ to /dev/null.  The two commands above demonstrate /dev/null working, but
 /dev/zero failing with operation not permitted.
 
 * Using capabilities
-  * This doesn't seem to work yet for some reason.
+  * sudo contain --cap=+net\_bind\_service -- su -c id  
+This demonstrates disabling all capabilities except for binding to low ports.
+Multiple capabilities can be specified, separated by commas.  Or you can instead
+list the capabilities you'd rather remove.
 
 * Making root a non priviledged user
    sudo contain --noroot --uid=nobody -- su -c id  
