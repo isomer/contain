@@ -50,7 +50,7 @@ static error_t parse_chroot_opt(int key, char *arg, struct argp_state *state)
 		argp_failure(state, 1, 0, "Expected = in bind mount spec");
 	    tmp = allocate_mount();
 	    tmp->source = strdup(dot+1);
-	    tmp->target = strndup(arg, dot-arg-1);
+	    tmp->target = strndup(arg, dot-arg);
 	    tmp->type = MOUNT_BIND;
 	    break;
 	case 1:
@@ -64,7 +64,7 @@ static error_t parse_chroot_opt(int key, char *arg, struct argp_state *state)
 		argp_failure(state, 1, 0, "Expected = in move mount spec");
 	    tmp = allocate_mount();
 	    tmp->source = strdup(dot+1);
-	    tmp->target = strndup(arg, dot-arg-1);
+	    tmp->target = strndup(arg, dot-arg);
 	    tmp->type = MOUNT_MOVE;
 	    break;
 	case 'c':
