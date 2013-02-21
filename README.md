@@ -16,12 +16,11 @@ lot of data, see set\_ioprio(2) for limitations)
 * sudo contain --newnet -- bash  
 Create a new networking namespace and run bash inside of it.
 
-* Creating a new pid namespace:
- * sudo contain --newpid --newmount -- sh -c 'mount -t proc none /proc ; ps aux'
+* Creating a new namespaces:
+ * sudo contain --newpid --newmount --mount /proc=none,proc -- ps aux
 
-To demonstrate this, we need to create a new mount namespace too, otherwise you
-still see the proc filesystem from outside the namespace and thus ps will give
-you weird results.
+If you're going to create a new pid namespace, you probably also want to use
+"simple-init" (included) to act as the new pid 1, and clean up zombie processes.
 
 * Using containers:
  * # First setup cgroups on this machine

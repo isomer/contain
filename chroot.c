@@ -10,14 +10,17 @@ static struct argp_option chroot_options[] = {
     {"bind",	'b', "newdir=olddir", 0, "Bind a directory into the chroot", 0},
     {"unmount",  1,  "directory", 0, "Unmount a directory", 0},
     {"move",    'm', "newdir=olddir", 0, "Move a mount point", 0},
+    {"mount",   'M', "target=source,fstype[,flags][,data]", 0, 
+	    "Mount a directory", 0 },
     {"chroot",  'c', "dir", 0, "Chroot to this directory", 0},
     {NULL, 0, NULL, 0, NULL, 0},
 };
 
 struct mounts_t {
-    enum { MOUNT_BIND, MOUNT_UNMOUNT, MOUNT_MOVE } type;
+    enum { MOUNT_BIND, MOUNT_UNMOUNT, MOUNT_MOVE, MOUNT_MOUNT } type;
     const char *source;
     const char *target;
+    const char *fstype;
     unsigned long flags;
     const char *data;
     struct mounts_t *next;
@@ -40,8 +43,7 @@ struct mounts_t *allocate_mount(void)
 static error_t parse_chroot_opt(int key, char *arg, struct argp_state *state)
 {
     struct mounts_t *tmp;
-    char *dot;
-    /* TODO: Support target=source,option,option,option. */
+    char *dot,*dot2,*dot3;
     switch(key) {    
 	case 'b':
 	    /* Parse line */
@@ -66,6 +68,47 @@ static error_t parse_chroot_opt(int key, char *arg, struct argp_state *state)
 	    tmp->source = strdup(dot+1);
 	    tmp->target = strndup(arg, dot-arg);
 	    tmp->type = MOUNT_MOVE;
+	    break;
+	case 'M':
+	    dot = strchr(arg, '=');
+	    if (!dot || dot <= arg)
+		argp_failure(state, 1, 0, "Expected = in mount spec");
+	    tmp = allocate_mount();
+	    tmp->type = MOUNT_MOUNT;
+	    tmp->target = strndup(arg, dot-arg);
+	    dot2 = strchr(dot+1, ',');
+	    if (!dot2 || dot2 <= dot)
+		argp_failure(state, 1, 0, "Expected ,fstype in mount spec");
+	    tmp->source = strndup(dot+1, dot2-dot-1);
+	    tmp->flags = 0;
+	    dot3 = strchr(dot2+1, ',');
+	    if (dot3 && dot3 > dot2) {
+	    	tmp->fstype = strndup(dot2+1, dot3-dot2-1);
+		while (*dot3) {
+			while (*dot3 == ',') dot3++;
+#define flag(name) \
+	if (!strncasecmp(dot3, #name ",", strlen(#name ",")) \
+			|| !strcasecmp(dot3, #name)) { \
+		dot3 += strlen(#name); \
+		tmp->flags |= MS_ ## name; \
+		continue; \
+	}
+			flag(DIRSYNC); flag(MANDLOCK); flag(NOATIME);
+			flag(NODEV); flag(NODIRATIME); flag(NOEXEC);
+			flag(NOSUID); flag(RDONLY); flag(RELATIME);
+			flag(SILENT); flag(STRICTATIME); flag(REMOUNT);
+			flag(SYNCHRONOUS);
+#undef flag
+
+			// Everything else ends up in "data"
+			tmp->data = strdup(dot3);
+			break;
+		}
+	    }
+	    else {
+		tmp->fstype = strdup(dot2+1);
+		tmp->data = strdup("");
+	    }
 	    break;
 	case 'c':
 	    if (root)
@@ -103,6 +146,14 @@ int do_chroot(void)
 		    err(1, "Unable to bind mount %s=%s", it->target, 
 			it->source);
 		break;
+	    case MOUNT_MOUNT:
+		if (mount(it->source, it->target, it->fstype, it->flags,
+					it->data) == -1)
+	  	    err(1, "Unable to mount %s=%s (%s%s)", it->target,
+			it->source, it->fstype, it->data);
+		break;
+	     default:
+		err(1, "unknown type %d", it->type);
 	}
     }
     if (root) {
