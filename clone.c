@@ -50,6 +50,7 @@ static int child_start(void *dummy)
     do_nice();
     do_ioprio();
     do_cgroup();
+    do_chroot();
     do_capabilities();
     do_prctl();
     do_selinux();
