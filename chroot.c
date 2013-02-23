@@ -1,8 +1,10 @@
+#define _GNU_SOURCE 1
 #include "contain.h"
 #include <sys/mount.h>
 #include <argp.h>
 #include <err.h>
 #include <stdlib.h>
+#include <stdio.h>
 #include <string.h>
 #include <unistd.h>
 
@@ -125,30 +127,40 @@ static error_t parse_chroot_opt(int key, char *arg, struct argp_state *state)
 struct argp chroot_argp = {
     chroot_options, parse_chroot_opt, "", "Chroot flags", 0, 0, 0 };
 
+char *target2root(const char *path)
+{
+	char *ret;
+	if (!root)
+		return strdup(path);
+	asprintf(&ret, "%s/%s", root, path);
+	return ret;
+}
+
 int do_chroot(void)
 {
     struct mounts_t *it = NULL;
-    /* TODO: Implement. */
     /* TODO: Should I try and umount everything outside the chroot? */
     for(it = mounts_head; it != NULL; it=it->next) {
 	switch(it->type) {
 	    case MOUNT_UNMOUNT:
-		if (umount2(it->target, MNT_DETACH) == -1)
+		if (umount2(target2root(it->target), MNT_DETACH) == -1)
 		    err(1, "Unable to unmount(%s)", it->target);
 		break;
 	    case MOUNT_BIND:
-		if (mount(it->source, it->target, NULL, MS_BIND, NULL) == -1)
+		if (mount(it->source, target2root(it->target), NULL, MS_BIND, 
+					NULL) == -1)
 		    err(1, "Unable to bind mount %s=%s", it->target, 
 			it->source);
 		break;
 	    case MOUNT_MOVE:
-		if (mount(it->source, it->target, NULL, MS_MOVE, NULL) == -1)
+		if (mount(it->source, target2root(it->target), NULL, MS_MOVE, 
+					NULL) == -1)
 		    err(1, "Unable to bind mount %s=%s", it->target, 
 			it->source);
 		break;
 	    case MOUNT_MOUNT:
-		if (mount(it->source, it->target, it->fstype, it->flags,
-					it->data) == -1)
+		if (mount(it->source, target2root(it->target), it->fstype, 
+					it->flags, it->data) == -1)
 	  	    err(1, "Unable to mount %s=%s (%s%s)", it->target,
 			it->source, it->fstype, it->data);
 		break;
