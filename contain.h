@@ -13,6 +13,7 @@ extern struct argp rlimit_argp; /* 103x 104x */
 extern struct argp selinux_argp;
 
 int do_capabilities(void);
+int do_chroot(void);
 int do_ioprio(void);
 int do_nice(void);
 int do_prctl(void);
