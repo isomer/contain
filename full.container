@@ -1,0 +1,50 @@
+{
+	"name": "full_example",
+	"nice": 10,
+	"user": "nobody",
+ 	"group": "nogroup",
+	"namespaces": ["net", "ipc", "mount", "pid", "uname"],
+	"io": {
+		"class": "best_effort",
+		"priority": 7
+	},
+	"mounts": [
+		{ "target": "/proc", "source": "none", "fstype": "proc", "flags": "", "options": "" },
+		{ "target": "/sys", "source": "none", "fstype": "sysfs", "flags": "", "options": "" }
+	],
+	"cgroups": {
+		"devices": {
+			"deny": "a",
+			"allow": "c *:* m\nb *:* m\nc 5:1 rwm\nc 10:229 rwm\n c 1:3 rwm\nc 5:2 rwm\nc 136:* rwm\nc 1:8 rwm\nc 254:0 rwm\nc 5:0 rwm"
+		},
+		"cpu": {
+			"shares": 1024
+		},
+		"cpuset": {
+			"cpus": "0"
+		}
+	},
+
+	"capabilities": ["net_admin", "net_bind_service", "net_raw", "setgid",
+			"setuid", "sys_ptrace"],
+
+	"flags": ["noroot"],
+
+	"ulimits": {
+		"rss": { "hard": 134217728, "soft": 67108864 }
+	},
+
+	"chroot": "/tmp/full_example",
+
+	"setup_cmds": [
+		"debootstrap wheezy $CHROOT http://ftp.debian.org/debian"
+	],
+
+	"environment": {
+		"PATH": "/usr/bin:/bin:/usr/local/bin",
+		"HOME": "/",
+		"USER": "nobody"
+	},
+
+	"command_line": "/bin/bash"
+}

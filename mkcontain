@@ -1,0 +1,114 @@
+#!/usr/bin/env python
+import json
+import logging
+import os
+import re
+import subprocess
+import sys
+import uuid
+
+logging.getLogger().setLevel(logging.INFO)
+
+logging.info("Reading config file %s", sys.argv[1])
+with open(sys.argv[1], "r") as f:
+    info = json.load(f, object_pairs_hook=lambda x:x)
+
+cmdline = []
+
+info = dict(info)
+
+env = dict(os.environ)
+
+cmdline = ['./contain']
+
+if 'name' in info:
+    cmdline += [u'--name='+ info['name']]
+    env['CONTAINER']=info['name']
+
+if 'selinux_context' in info:
+    cmdline += [u'--context='+info['selinux_context']]
+
+if 'nice' in info:
+    cmdline += [u'--nice=%s'%info['nice']]
+
+if 'user' in info:
+    cmdline += [u'--uid=%s'%info['user']]
+
+if 'group' in info:
+    cmdline += [u'--gid=%s'%info['group']]
+
+if 'namespaces' in info:
+    for i in info['namespaces']:
+        cmdline += ['--new%s' % i]
+
+if 'io' in info:
+    ioinfo = dict(info['io'])
+    cls = ioinfo.get('class', 'best_effort')
+    cmdline += ['--%s=%s' % ({
+        'best_effort': 'iobe',
+        'idle': 'ioidle',
+        'real_time': 'iort',
+        }[cls], ioinfo.get('priority', 0))]
+
+if 'mounts' in info:
+    for i in info['mounts']:
+        cmdline += ['--mount=%(target)s=%(source)s'
+            ',%(fstype)s,%(flags)s,%(options)s' % dict(i)]
+
+if 'cgroups' in info:
+    for name, controller in dict(info['cgroups']).iteritems():
+        for attr, value in controller:
+            cmdline += [u'--limit=%(controller)s.%(attr)s=%(value)s' % {
+                'controller' : name,
+                'attr' : attr,
+                'value' : value,
+                }]
+
+if 'capabilities' in info:
+    if isinstance(info['capabilities'], basestring):
+        cmdline += [u'--cap=+'+info['capabilities']]
+    else:
+        cmdline += [u'--cap='+u','.join(info['capabilities'])]
+
+if 'noroot' in info.get('flags', ''):
+    cmdline.append('--noroot')
+
+if 'ulimits' in info:
+    ulimit = dict(info['ulimits'])
+    for i in ulimit:
+        if 'soft' in ulimit[i]:
+            cmdline.append('--%s=%s' % (i.replace('_', '-'), ulimit[i]['soft']))
+        if 'hard' in ulimit[i]:
+            cmdline.append('--max-%s=%s' % (
+                i.replace('_', '-'), ulimit[i]['soft']))
+
+if 'chroot' in info:
+    cmdline += ['--chroot', info['chroot']]
+    if not os.path.exists(info['chroot']):
+        os.makedirs(info['chroot']) # Beware permissions
+    env['CHROOT'] = info['chroot']
+
+if 'setup_cmds' in info:
+    for cmd in info['setup_cmds']:
+        logging.info("Running setup command %s", cmd)
+        subprocess.check_call(cmd, shell=True, env=env, cwd=env.get('CHROOT',
+            os.getcwd()))
+
+if 'environment' in info:
+    subenv = info['environment']
+else:
+    subenv = env.copy()
+
+# TODO: I'd like to run some commands after the containers been set up, eg
+# to push networking interfaces into it.
+def quote(x):
+    if not re.match('^[0-9a-zA-Z_+./,=-]+$', x):
+        return "'"+x.replace("'", "\\'")+"'"
+    return x
+
+cmdline = map(quote, cmdline)
+cmdline += ['--', info['command_line']]
+
+cmdline = ' '.join(cmdline)
+logging.info("Running %s", cmdline)
+sys.exit(subprocess.call(cmdline, shell=True, env=env))
