@@ -1,4 +1,4 @@
-CFLAGS?=-g -Wall -Wstrict-prototypes -Wextra
+CFLAGS?=-g -Wall -Wstrict-prototypes -Wextra -Wmissing-prototypes
 
 PKGS:=libcgroup libselinux
 
