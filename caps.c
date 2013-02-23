@@ -51,11 +51,10 @@ static error_t parse_cap_opt(int key, char *arg, struct argp_state *state)
 		 * If we're removing capabilities, start with what we have.
 		 */
 		containcap = malloc(sizeof(*containcap));
+		*containcap = cap_get_proc();
 		if (enable) {
-		    *containcap = cap_init();
-		    if (cap_clear(*containcap)) err(1, "cap_clear");
-		} else {
-		    *containcap = cap_get_proc();
+		    if (cap_clear_flag(*containcap, CAP_INHERITABLE)) 
+			    err(1, "cap_clear");
 		}
 	    }
 	    assert(containcap);
