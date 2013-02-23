@@ -51,9 +51,9 @@ static int child_start(void *dummy)
     do_ioprio();
     do_cgroup();
     do_chroot();
-    do_capabilities();
-    do_prctl();
     do_selinux();
+    do_prctl();
+    do_capabilities();
     change_user();
     execvp(argv[0], argv);
     err(1, "execlv(%s)", argv[0]);
