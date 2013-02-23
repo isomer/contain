@@ -30,7 +30,7 @@ struct mounts_t {
 
 char *root = NULL;
 
-struct mounts_t *allocate_mount(void)
+static struct mounts_t *allocate_mount(void)
 {
 	struct mounts_t *tmp = malloc(sizeof(struct mounts_t));
 	tmp->next = NULL;
@@ -127,7 +127,7 @@ static error_t parse_chroot_opt(int key, char *arg, struct argp_state *state)
 struct argp chroot_argp = {
     chroot_options, parse_chroot_opt, "", "Chroot flags", 0, 0, 0 };
 
-char *target2root(const char *path)
+static char *target2root(const char *path)
 {
 	char *ret;
 	if (!root)
