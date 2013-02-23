@@ -65,7 +65,7 @@ static error_t parse_cap_opt(int key, char *arg, struct argp_state *state)
 		end = strchr(st, ',');
 		if (end) {
 		    name = strndup(st, end-st);
-		    st = end;
+		    st = end+1;
 		}
 		else {
 		    name = strdup(st);
