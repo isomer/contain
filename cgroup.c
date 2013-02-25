@@ -29,6 +29,10 @@ parse_cgroup_opt(int key, char *arg, struct argp_state *state)
 	    setting[num_settings+1]=NULL;
 	    num_settings++;
 	    break;
+	case ARGP_KEY_END:
+	    if (setting && !name)
+		argp_failure(state, 1, 0, "You must specify a --name with cgroup options");
+	    break;
 	default:
 	    return ARGP_ERR_UNKNOWN;
     }
