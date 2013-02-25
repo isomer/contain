@@ -11,6 +11,7 @@
 #include <sched.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <unistd.h>
 
 static bool new_ipc = false;
@@ -22,6 +23,7 @@ static char **argv = NULL;
 static int argc = 0;
 static struct passwd *user = NULL;
 static struct group *group = NULL;
+static char *hostname = NULL;
 
 /* If:
  * !user && !group => nothing
@@ -47,6 +49,8 @@ static void change_user(void)
 
 static int child_start(void *dummy)
 {
+    if (hostname)
+	sethostname(hostname, strlen(hostname));
     do_nice();
     do_ioprio();
     do_cgroup();
@@ -66,6 +70,7 @@ static struct argp_option clone_options[] = {
     {"newmount", 'M', 0, 0, "Create a new filesystem namespace", 0},
     {"newpid",   'P', 0, 0, "Create a new pid namespace", 0},
     {"newuname", 'U', 0, 0, "Create a new uname namespace", 0},
+    {"hostname",1050, "hostname", 0, "Set the hostname", 0},
     {"uid",      'u', "user", 0, "User ID to change to", 0},
     {"gid",      'g', "group", 0, "Group ID to change to", 0},
     {NULL,	  0,   0, 0, NULL, 0 },
@@ -90,16 +95,25 @@ parse_clone_opt(int key, char *arg, struct argp_state *state)
 	    if (!group)
 		argp_failure(state, 1, errno, "Unknown group %s", arg);
 	    break;
+	case 1050:
+	    if (hostname)
+		argp_failure(state, 1, errno, "Cannot specify hostname twice");
+	    else
+	        hostname = strdup(arg);
+	    break;
 	case ARGP_KEY_ARGS:
 	    argv = state->argv + state->next;
 	    argc = state->argc - state->next;
 	    break;
-	case ARGP_KEY_SUCCESS:
+	case ARGP_KEY_END:
 	    if(!argv)
 		argp_usage(state);
 	    if(group && !user)
 		argp_failure(state, 1, 0, 
 			    "If you specify a group, you must specify a user");
+	    if (hostname && !new_uts)
+		argp_failure(state, 1, 0,
+			"You must create a new uts namespace with hostname");
 	    break;
 	default: 
 	    return ARGP_ERR_UNKNOWN;

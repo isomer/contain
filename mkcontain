@@ -37,6 +37,11 @@ if 'user' in info:
 if 'group' in info:
     cmdline += [u'--gid=%s'%info['group']]
 
+if 'hostname' in info:
+    cmdline += [u'--hostname=%s' % info['hostname']]
+    # make sure uname in the list of namespaces 
+    info['namespaces']=list(set(info.get('namespaces',[]))|set('uname'))
+
 if 'namespaces' in info:
     for i in info['namespaces']:
         cmdline += ['--new%s' % i]
