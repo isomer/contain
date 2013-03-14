@@ -20,7 +20,8 @@ Create a new networking namespace and run bash inside of it.
  * sudo contain --newpid --newmount --mount /proc=none,proc -- ps aux
 
 If you're going to create a new pid namespace, you probably also want to use
-"simple-init" (included) to act as the new pid 1, and clean up zombie processes.
+"simple-init" (included) to act as the new pid 1, and clean up zombie processes.if this "init" process ever exits then the entire namespace is destroyed.
+Beware of this if you have a program that likes to daemonise itself as init.
 
 * Using containers:
  * # First setup cgroups on this machine
@@ -52,6 +53,7 @@ list the capabilities you'd rather remove.
 This demonstrates that nobody can execute su, but the setuid bit doesn't grant
 it any extra privileges
 
-
+* It's probably easier at this point to look at what mkcontain does with various
+example container files.
 
 
