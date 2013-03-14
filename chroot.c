@@ -1,6 +1,7 @@
 #define _GNU_SOURCE 1
 #include "contain.h"
 #include <sys/mount.h>
+#include <sys/syscall.h>
 #include <argp.h>
 #include <err.h>
 #include <stdlib.h>
@@ -10,16 +11,22 @@
 
 static struct argp_option chroot_options[] = {
     {"bind",	'b', "newdir=olddir", 0, "Bind a directory into the chroot", 0},
-    {"unmount",  1,  "directory", 0, "Unmount a directory", 0},
+    {"unmount", 1060, "directory", 0, "Unmount a directory", 0},
     {"move",    'm', "newdir=olddir", 0, "Move a mount point", 0},
     {"mount",   'M', "target=source,fstype[,flags][,data]", 0, 
 	    "Mount a directory", 0 },
     {"chroot",  'c', "dir", 0, "Chroot to this directory", 0},
+    {"pivot-root", 1061, "oldroot=newroot", 0, "swap mount point", 0},
     {NULL, 0, NULL, 0, NULL, 0},
 };
 
 struct mounts_t {
-    enum { MOUNT_BIND, MOUNT_UNMOUNT, MOUNT_MOVE, MOUNT_MOUNT } type;
+    enum { 
+	    MOUNT_BIND, 
+	    MOUNT_UNMOUNT, 
+	    MOUNT_MOVE, 
+	    MOUNT_MOUNT, 
+	    MOUNT_PIVOT } type;
     const char *source;
     const char *target;
     const char *fstype;
@@ -57,12 +64,12 @@ static error_t parse_chroot_opt(int key, char *arg, struct argp_state *state)
 	    tmp->target = strndup(arg, dot-arg);
 	    tmp->type = MOUNT_BIND;
 	    break;
-	case 1:
+	case 1060: /* umount */
 	    tmp = allocate_mount();
 	    tmp->target = strdup(arg);
 	    tmp->type = MOUNT_UNMOUNT;
 	    break;
-	case 'm':
+	case 'm': /* move */
 	    dot = strchr(arg, '=');
 	    if (!dot || dot <= arg)
 		argp_failure(state, 1, 0, "Expected = in move mount spec");
@@ -71,7 +78,7 @@ static error_t parse_chroot_opt(int key, char *arg, struct argp_state *state)
 	    tmp->target = strndup(arg, dot-arg);
 	    tmp->type = MOUNT_MOVE;
 	    break;
-	case 'M':
+	case 'M': /* mount */
 	    dot = strchr(arg, '=');
 	    if (!dot || dot <= arg)
 		argp_failure(state, 1, 0, "Expected = in mount spec");
@@ -112,11 +119,20 @@ static error_t parse_chroot_opt(int key, char *arg, struct argp_state *state)
 		tmp->data = strdup("");
 	    }
 	    break;
-	case 'c':
+	case 'c': /* chroot */
 	    if (root)
 		argp_failure(state, 1, 0, 
 			    "You cannot specify chroot multiple times");
 	    root = strdup(arg);
+	    break;
+	case 1061: /* pivot root */
+	    dot = strchr(arg, '=');
+	    if (!dot || dot <= arg)
+		argp_failure(state, 1, 0, "Expected = in move pivot spec");
+	    tmp = allocate_mount();
+	    tmp->source = strdup(dot+1);
+	    tmp->target = strndup(arg, dot-arg);
+	    tmp->type = MOUNT_PIVOT;
 	    break;
 	default:
 	    return ARGP_ERR_UNKNOWN;
@@ -129,11 +145,16 @@ struct argp chroot_argp = {
 
 static char *target2root(const char *path)
 {
-	char *ret;
-	if (!root)
-		return strdup(path);
-	asprintf(&ret, "%s/%s", root, path);
-	return ret;
+    char *ret;
+    if (!root)
+	return strdup(path);
+    asprintf(&ret, "%s/%s", root, path);
+    return ret;
+}
+
+static int pivot_root(const char *new_root, const char *put_old)
+{
+    return syscall(SYS_pivot_root, new_root, put_old);
 }
 
 int do_chroot(void)
@@ -163,6 +184,11 @@ int do_chroot(void)
 					it->flags, it->data) == -1)
 	  	    err(1, "Unable to mount %s=%s (%s%s)", it->target,
 			it->source, it->fstype, it->data);
+		break;
+	    case MOUNT_PIVOT:
+		if (pivot_root(it->source, target2root(it->target)))
+		    err(1, "pivot_root(%s, %s)",
+			it->source, target2root(it->target));
 		break;
 	     default:
 		err(1, "unknown type %d", it->type);

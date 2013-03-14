@@ -4,7 +4,7 @@
 
 extern struct argp cap_argp;
 extern struct argp cgroup_argp;
-extern struct argp chroot_argp;
+extern struct argp chroot_argp; /* 106x */
 extern struct argp clone_argp;  /* 105x */ 
 extern struct argp ioprio_argp; /* 101x */
 extern struct argp nice_argp;   /* 102x */

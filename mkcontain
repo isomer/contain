@@ -60,6 +60,13 @@ if 'mounts' in info:
         cmdline += ['--mount=%(target)s=%(source)s'
             ',%(fstype)s,%(flags)s,%(options)s' % dict(i)]
 
+if 'pivot_root' in info:
+    cmdline += ['--pivot_root', info['pivot_root']]
+
+if 'umounts' in info:
+    for i in info['umounts']:
+        cmdline += ['--umount=%s' % i]
+
 if 'cgroups' in info:
     for name, controller in dict(info['cgroups']).iteritems():
         for attr, value in controller:
