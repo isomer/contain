@@ -24,6 +24,7 @@ static int argc = 0;
 static struct passwd *user = NULL;
 static struct group *group = NULL;
 static char *hostname = NULL;
+static bool detach = false;
 
 /* If:
  * !user && !group => nothing
@@ -73,6 +74,7 @@ static struct argp_option clone_options[] = {
     {"hostname",1050, "hostname", 0, "Set the hostname", 0},
     {"uid",      'u', "user", 0, "User ID to change to", 0},
     {"gid",      'g', "group", 0, "Group ID to change to", 0},
+    {"detach",	1051,  0, 0, "Detach child process", 0},
     {NULL,	  0,   0, 0, NULL, 0 },
 };
 
@@ -100,6 +102,9 @@ parse_clone_opt(int key, char *arg, struct argp_state *state)
 		argp_failure(state, 1, errno, "Cannot specify hostname twice");
 	    else
 	        hostname = strdup(arg);
+	    break;
+	case 1051:
+	    detach = true;
 	    break;
 	case ARGP_KEY_ARGS:
 	    argv = state->argv + state->next;
@@ -148,11 +153,14 @@ int setup_clone(void)
 	flags |= CLONE_NEWUTS;
     /* UID/GID namespaces are coming.... */
 
+    if (detach) 
+    	daemon(1, 1);
+
     pid = clone(child_start, stack+STACKSIZE, flags, NULL);
     if (pid == -1)
 	err(1, "clone()");
 
-    if (waitpid(pid, &status, 0) == -1)
+    if (!detach && waitpid(pid, &status, 0) == -1)
 	warn("waitpid(%d)", pid);
 
     return status;
