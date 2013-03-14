@@ -129,14 +129,14 @@ parse_clone_opt(int key, char *arg, struct argp_state *state)
 
 struct argp clone_argp = { clone_options, parse_clone_opt, "", "Clone flags", 0, 0, 0 };
 
+#define UNSHARE_SUPPORTED_FLAGS \
+    (CLONE_NEWIPC|CLONE_NEWNET|CLONE_NEWNS|CLONE_NEWUTS|CLONE_FILES)
 
 int setup_clone(void)
 {
 #define STACKSIZE (32*1024)
-    char *stack = malloc(STACKSIZE);
     int flags = 0;
     int status;
-    pid_t pid;
 
     flags |= CLONE_FILES; /* fork() normally shares fd's */
     flags |= SIGCHLD;	/* Signal to send to the parent process. */
@@ -156,12 +156,20 @@ int setup_clone(void)
     if (detach) 
     	daemon(1, 1);
 
-    pid = clone(child_start, stack+STACKSIZE, flags, NULL);
-    if (pid == -1)
-	err(1, "clone()");
+    if (flags & ~(UNSHARE_SUPPORTED_FLAGS|SIGCHLD)) {
+	char *stack = malloc(STACKSIZE);
+	pid_t pid = clone(child_start, stack+STACKSIZE, flags, NULL);
+	if (pid == -1)
+	    err(1, "clone()");
 
-    if (!detach && waitpid(pid, &status, 0) == -1)
-	warn("waitpid(%d)", pid);
+	if (!detach && waitpid(pid, &status, 0) == -1)
+	    warn("waitpid(%d)", pid);
+    }
+    else {
+	if (unshare(flags & ~(SIGCHLD)) == -1)
+	    err(1, "unshare");
+	child_start(NULL);
+    }
 
     return status;
 }
