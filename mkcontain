@@ -75,8 +75,11 @@ if 'capabilities' in info:
     else:
         cmdline += [u'--cap='+u','.join(info['capabilities'])]
 
-if 'noroot' in info.get('flags', ''):
+if 'noroot' in info.get('flags', []):
     cmdline.append('--noroot')
+
+if 'detach' in info.get('flags', []):
+    cmdline.append('--detach')
 
 if 'ulimits' in info:
     ulimit = dict(info['ulimits'])
