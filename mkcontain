@@ -7,6 +7,9 @@ import subprocess
 import sys
 import uuid
 
+CONTAIN_PATH = os.path.join(os.path.abspath(os.path.dirname(sys.argv[0])),
+    "contain")
+
 logging.getLogger().setLevel(logging.INFO)
 
 logging.info("Reading config file %s", sys.argv[1])
@@ -19,7 +22,7 @@ info = dict(info)
 
 env = dict(os.environ)
 
-cmdline = ['./contain']
+cmdline = [CONTAIN_PATH]
 
 if 'name' in info:
     cmdline += [u'--name='+ info['name']]
