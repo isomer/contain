@@ -19,6 +19,7 @@ static bool new_net = false;
 static bool new_ns = false;
 static bool new_pid = false;
 static bool new_uts = false;
+static bool new_user = false;
 static char **argv = NULL;
 static int argc = 0;
 static struct passwd *user = NULL;
@@ -71,6 +72,7 @@ static struct argp_option clone_options[] = {
     {"newmount", 'M', 0, 0, "Create a new filesystem namespace", 0},
     {"newpid",   'P', 0, 0, "Create a new pid namespace", 0},
     {"newuname", 'U', 0, 0, "Create a new uname namespace", 0},
+    {"newuser", 1052, 0, 0, "Create a new uid/gid namespace", 0},
     {"hostname",1050, "hostname", 0, "Set the hostname", 0},
     {"uid",      'u', "user", 0, "User ID to change to", 0},
     {"gid",      'g', "group", 0, "Group ID to change to", 0},
@@ -106,6 +108,8 @@ parse_clone_opt(int key, char *arg, struct argp_state *state)
 	case 1051:
 	    detach = true;
 	    break;
+	case 1052:
+	    new_user = true; break;
 	case ARGP_KEY_ARGS:
 	    argv = state->argv + state->next;
 	    argc = state->argc - state->next;
@@ -130,7 +134,8 @@ parse_clone_opt(int key, char *arg, struct argp_state *state)
 struct argp clone_argp = { clone_options, parse_clone_opt, "", "Clone flags", 0, 0, 0 };
 
 #define UNSHARE_SUPPORTED_FLAGS \
-    (CLONE_NEWIPC|CLONE_NEWNET|CLONE_NEWNS|CLONE_NEWUTS|CLONE_FILES)
+    (CLONE_NEWIPC|CLONE_NEWNET|CLONE_NEWNS|CLONE_NEWUTS|CLONE_FILES \
+     |CLONE_NEWUSER)
 
 int setup_clone(void)
 {
@@ -151,7 +156,8 @@ int setup_clone(void)
 	flags |= CLONE_NEWPID;
     if (new_uts)
 	flags |= CLONE_NEWUTS;
-    /* UID/GID namespaces are coming.... */
+    if (new_user)
+	flags |= CLONE_NEWUSER;
 
     if (detach) 
     	daemon(1, 1);
