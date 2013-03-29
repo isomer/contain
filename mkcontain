@@ -52,11 +52,15 @@ if 'namespaces' in info:
 if 'io' in info:
     ioinfo = dict(info['io'])
     cls = ioinfo.get('class', 'best_effort')
-    cmdline += ['--%s=%s' % ({
-        'best_effort': 'iobe',
-        'idle': 'ioidle',
-        'real_time': 'iort',
-        }[cls], ioinfo.get('priority', 0))]
+    if cls in ['rt', 'best_effort']:
+        cmdline += ['--%s=%s' % ({
+            'best_effort': 'iobe',
+            'real_time': 'iort',
+            }[cls], ioinfo.get('priority', 0))]
+    elif cls == 'idle':
+        cmdline += '--ioidle'
+    else:
+        assert False, "Unknown io class %s" % cls
 
 if 'mounts' in info:
     for i in info['mounts']:

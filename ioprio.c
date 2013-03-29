@@ -38,7 +38,7 @@ static inline int ioprio_get(int which, int who)
 static struct argp_option ioprio_options[] = {
     {"iort",       1010, "priority", 0, "Set IO Realtime priority level", 0},
     {"iobe",       1011, "priority", 0, "Set IO Besteffort priority level", 0},
-    {"ioidle",     1012, "priority", 0, "Set IO Idle priority level", 0},
+    {"ioidle",     1012,  0,         0, "Set IO Idle priority level", 0},
     {NULL,	   0,   0, 0, NULL, 0 },
 };
 
@@ -48,7 +48,7 @@ static error_t parse_ioprio_opt(int key, char *arg, struct argp_state *state)
 {
     switch(key) {
         case 1010:
-            ioprio_value = IOPRIO_PRIO_VALUE(IOPRIO_CLASS_RT, atoi(arg));
+            ioprio_value = IOPRIO_PRIO_VALUE(IOPRIO_CLASS_RT, 0);
             break;
         case 1011:
             ioprio_value = IOPRIO_PRIO_VALUE(IOPRIO_CLASS_BE, atoi(arg));
