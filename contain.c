@@ -8,7 +8,7 @@
 #include <stdio.h>
 #include <string.h>
 
-const char *argp_program_version = "manager 1.0";
+const char *argp_program_version = "contain 1.0";
 
 static char doc[] =
     "Program to flexibly create a new container and run a process";
