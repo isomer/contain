@@ -1,0 +1,345 @@
+.TH contain 8 2013-03-29 Contain contain
+.SH NAME
+contain \- Create a Linux container and run a program inside it.
+.SH SYNOPSIS
+.B contain 
+.B [\-\-bind \fItargetpath\fP=\fIorigpath\fP] 
+.B [\-\-cap=[\fI+\fP|\fI\-\fP]\fIcap\fP[,\fIcap...\fP]
+.B [\-\-chroot \fIpath\fP]
+.B [\-\-context \fIcontext\fP]
+.B [\-\-detach]
+.B [\-\-gid \fIgroup\fP]
+.B [\-\-hostname \fIhostname\fP]
+.B [\-\-iobe \fIpriority\fP]
+.B [\-\-ioidle]
+.B [\-\-iort \fIpriority\fP]
+.B [\-\-limit \fIcontroller\fP.\fIresource\fP=\fIvalue\fP]
+.B [\-\-move \fItargetpath\fP=\fIsourcepath\fP]
+.B [\-\-mount \fItargetpath\fP=\fIsourcepath\fP,\fIfstype\fP,\fIflags\fP,\
+\fIoptions\fP]
+.B [\-\-newipc]
+.B [\-\-newnet]
+.B [\-\-newmount]
+.B [\-\-newpid]
+.B [\-\-newuname]
+.B [\-\-newuser]
+.B [\-\-noroot]
+.B [\-\-uid \fIgroup\fP]
+.B [\-\-unmount \fIsourcepath\fP]
+.B \fIprogram\fP \fIargs...\fP
+
+.SH DESCRIPTION
+contain is a program for configuring a Linux container.  
+Linux containers are made up from multiple different underlying tools (such as
+cgroups and namespaces.
+Configuration is provided by a myriad of command line options, as many or as
+few can be specified as necessary, letting you choose how much you want
+virtualised, or limited.
+.
+.SH OPTIONS
+.
+.SS "Namespaces"
+.IP "\-\-newipc"
+Creates a new IPC namespace.
+Processes within this namespace will not be able to IPC with tasks outside
+the namespace.
+.
+.IP "\-\-newnet"
+Creates a new networking namespace.
+This creates a new natworking namespace, with a new "lo" interface, and nothing
+else. 
+.
+.IP "\-\-newmount"
+Creates a new mount namespace.
+Processes within this namespace can see different mounts to processes living
+outside this namespace.  
+Most useful in conjunction with the "Filesystem options" documented below.
+.
+.IP "\-\-newpid"
+Creates a new PID namespace.  
+The command you run becomes the new "init" process for the namespace and will
+have pid 1 as seen from inside the container.
+When this command exits the kernel will tear down all the processes in this
+namespace.
+.
+.IP "\-\-newuname"
+Creates a new UTS namespace.
+This is most useful in conjunction with \-\-newnet and \-\-hostname options.
+.
+.IP "\-\-newuser"
+Creates a new uid/gid namespace.
+.
+.SS "Clone options"
+.IP "\-\-detach"
+Don't wait for the running program to complete before returning.
+.
+.IP "\-\-gid \fIgroup\fP"
+Change to group \fIgroup\fP before dropping permissions and executing the
+program.
+.
+.IP "\-\-hostname \fIhostname\fP"
+Set the hostname to \fIhostname\fP before executing the program.
+This should only be used with \-\-newuname otherwise it will set the hostname
+of the entire machine.
+.
+.IP "\-\-uid \fIuser\fP"
+Change to user \fIuser\fP before dropping permissions and executing the
+program.
+If \-\-gid is not specified, then also call initgroups(3) to set up the
+groups properly.
+.
+.SS "Filesystem commands"
+.IP "\-\-bind \fItargetpath\fP=\fIorigpath\fP"
+Bind mount \fIorigpath\fP on top of \fItargetpath\fP.
+This is handy to make directories outside of a chroot available inside the
+chroot.  
+Note that if a chroot is specified, then \fItargetpath\fP is relative to
+the chroot, where as \fIorigpath\fP is relative to the root outside of contain.
+All bind, mount, move, unmount and pivot\-root commands are executed in order
+presented on the command line.
+.
+.IP "\-\-chroot \fIpath\fP"
+chroot the process inside \fIpath\fP.  Note that if you start a program in a
+chroot, some of contains features require /proc to be mounted inside the chroot.
+.
+.IP "\-\-move \fItargetpath\fP=\fIsourcepath\fP"
+This will move an already existing mount from \fIsourcepath\fP to
+\fItargetpath\fP. 
+Note that if \-\-chroot is also specified, then \fItargetpath\fP is taken to be
+relative to the chroot, where as \fIsourcepath\fP is always relative to the
+root outside of the container.
+All bind, mount, move, unmount and pivot\-root commands are executed in order
+presented on the command line.
+.
+.IP "\-\-mount \fItargetpath\fP=\fIsourcepath\fP,\fIfstype\fP,\fIflags\fI,\fIoptions\fP"
+Mount a filesystem onto \fItargetpath\fP.
+Flags can be any combination of:
+.RS
+.B dirsync
+.RS
+FIXME
+.RE
+.
+.B nandlock
+.RS
+FIXME
+.RE
+.
+.B noatime
+.RS
+Don't update the atime in the inode on access.
+Useful for trying reduce write I/O load on a read mostly filesystem.
+.RE
+.B nodev
+.RS
+Disallow access to device inodes on this filesystem.
+.RE
+.
+.B nodiratime
+.RS
+Similar to noatime, but only for directory inodes.
+.RE
+.
+.B noexec
+.RS
+Disallow execve(2) of files on this filesystem.
+.RE
+.
+.B nosuid
+.RS
+Don't respect setuid and setgid bits on files.
+.RE
+.
+.B rdonly
+.RS
+Disallow writes to this filesystem.
+.RE
+.
+.B relatime
+.RS
+Only update the atime on an inode if the atime in the inode was earlier than
+the current mtime or ctime of the file.
+.RE
+.
+.B silent
+.RS
+Suppress any messages related to this mount from being written to the kernel
+log.
+.RE
+.
+.B strictatime
+.RS
+Always update atime on a file.
+.RE
+.
+.B remount
+.RS
+Change the settings on an already existing mount without first unmounting it.
+.RE
+.
+.B synchronous
+.RS
+Make all writes synchronous, as if O_SYNC had been passed to every open(2) call.
+.RE
+
+The first non\-flag word is assumed to be the option, and the rest of the
+option is passed as is to the kernel for processing.
+Note that if \-\-chroot is also specified, then \fItargetpath\fP is taken to be
+relative to the chroot, where as \fIsourcepath\fP is always relative to the
+root outside of the container.
+All bind, mount, move, unmount and pivot\-root commands are executed in order
+presented on the command line.
+.RE
+.
+.IP "\-\-unmount \fIpath\fP"
+This will unmount a path.  
+Unlike other commands, the \fIpath\fP is \fBnot\fP relative to the path given
+to the \-\-chroot option if given, this is because you may want to unmount
+filesystems given outside of the chroot.
+This is useful if the container has a different filesystem namespace to
+unmount filesystems.
+All bind, mount, move, unmount and pivot\-root commands are executed in order
+presented on the command line.
+.
+.IP "\-\-pivot\-root \fIoldroot\fP=\fInewroot\fP"
+This will pivot the root directory from \fIoldroot\fP to \fInewroot\fP.
+Unlike other commands, both \fIoldroot\fP and \fInewroot\fP are \fBnot\fP
+relative to any chroots specified.
+All bind, mount, move, unmount and pivot\-root commands are executed in order
+presented on the command line.
+.
+.SS "Priotisation"
+.IP "\-\-iobe \fIpriority\fP"
+This sets the IO priority of the process to "best effort" with a priority
+between 0 and 7 with lower levels being higher priority.  Tasks with the
+same priority level will be serviced in a round robin fashion.
+.
+.IP "\-\-ioidle"
+This sets the IO priority of the process to "idle".
+This is useful for IO heavy batch jobs.
+\"Check to see if IO idle actually has priority levels
+.
+.IP "\-\-iort \fIpriority\fP"
+Processes with the Realtime IO class are given first access to the disk
+regardless of what else is happening on the system.
+The priorities within this class are 0 to 7, with lower priority levels being
+given earlier access to the disk.
+Beware that a task with the Real Time IO class can starve any process with
+a higher priority number, or anyone in the Idle or Best Effort IO classes.
+This is useful for latency sensitive jobs that don't do much IO.
+.
+.IP "\-\-nice=\fIpriority\fP"
+Start a process with a given nice level.  Valid nice levels are from -20 to
+postive 19 with higher levels getting less CPU time.
+.
+.SS "CGroup options"
+.IP "\-\-name \fIname\fP"
+Specify the name of the cgroup to place the process in.
+.
+.IP "\-\-limit \fIcontroller\fP.\fIresource\fP=\fIvalue\fP"
+Modify the cgroup the process is in by specying the value of a controller's
+resource.
+contain doesn't automatically mount the controller directories, and will fail
+if they are not present.
+See EXAMPLES section for more information.
+.
+.SS "Security options"
+.IP "\-\-context \fIcontext\fP"
+This starts the task inside a named SELinux context.
+.
+.IP "\-\-noroot"
+This makes it so that setuid root programs will not acquire any extra
+priviledges.
+.IP "\-\-cap=[\fI+\fP|\fI\-\fP]\fIcap\fP[,\fIcap...\fP]"
+Specifies the bounding set of capabilities for processes in this container.
+If specified with a leading + then processes can only achieve the capabilities
+specified in the list.
+If specified with a leading \- then processes can acquire any capabilities that
+the calling process has, except the ones specified on the command line.
++ is assumed if it's not specified.
+.
+.SS "RLimits"
+All of these options come with a "max-" varient which sets the "hard limit".
+The value "unlimited" can be used for no limit.
+.IP "\-\-virtual\-memory \fIbytes\fP"
+.IP "\-\-max\-virtual\-memory \fIbytes\fP"
+Limit the amount of virtual memory a process can use.
+.IP "\-\-core\-size \fIbytes\fP"
+.IP "\-\-max\-core\-size \fIbytes\fP"
+Limit the size of a core file a process will create.
+If this is 0, then no core file will be created.
+.IP "\-\-cpu\-time \fIseconds\fP"
+.IP "\-\-max\-cpu\-time \fIseconds\fP"
+Sets the maximum CPU time before the kernel will send the process the signal
+SIGXCPU.
+.IP "\-\-data\-memory \fIbytes\fP"
+.IP "\-\-max\-data\-memory \fIbytes\fP"
+Sets the process maximum data memory size.
+.IP "\-\-file\-size \fIbytes\fP"
+.IP "\-\-max\-file\-size \fIbytes\fP"
+Sets the maximum size file the process can write.
+.IP "\-\-lock\-memory \fIbytes\fP"
+.IP "\-\-max\-lock\-memory \fIbytes\fP"
+Sets the maximum process lockable memory.
+.IP "\-\-message\-queue \fIbytes\fP"
+.IP "\-\-max\-message\-queue \fIbytes\fP"
+Sets the maximum amount of memory consumable for message queues.
+.IP "\-\-file\-descriptors \fIcount\fP"
+.IP "\-\-max\-file\-descriptors \fIcount\fP"
+Sets the maximum file descriptors a user can have open simultaneously.
+.IP "\-\-processes \fIcount\fP"
+.IP "\-\-max\-processes \fIcount\fP"
+Sets the maximum processes a user can create simultaneously.
+.IP "\-\-stack \fIbytes\fP"
+.IP "\-\-max\-stack \fIbytes\fP"
+Sets the maximum memory size of the process stack.
+.
+.SH "EXIT STATUS"
+contain returns the exit of the process executed process (unless \-\-detach
+is used, in which case contain returns 0 on success), except when contain
+cannot set up the container, when it will exit with exit level 1.
+.
+.SH NOTES
+Many of these options don't make a lot of sense by themselves, or are better
+done by dedicated utilities, but none of these utilities let you do everything
+under one roof.
+Using multiple utilities to setup a container is fiddly and error prone, and
+in some cases impossible (since you need to drop priviliges, and continue
+changing privileges which is possible in one process, but not multiple).
+.
+.SH EXAMPLES
+A fairly complete example that creates a container:
+.RS 3
+.nf
+sudo ./contain  \\
+.RS 2
+\-\-name=full_example  \\
+\-\-nice=10     \\
+\-\-uid=nobody  \\
+\-\-newnet      \\
+\-\-newipc      \\
+\-\-newmount    \\
+\-\-newpid      \\
+\-\-newuname    \\
+\-\-iobe=7      \\
+\-\-mount=/proc=none,proc,, \\
+\-\-mount=/sys=none,sysfs,, \\
+\-\-limit=cpuset.cpus=0     \\
+\-\-limit=cpuset.mems=0     \\
+\-\-limit=cpu.shares=1024   \\
+\-\-limit=devices.deny=a    \\
+\-\-cap=net_admin,net_bind_service,net_raw,setgid,setuid,sys_ptrace \\
+\-\-noroot      \\
+\-\- /bin/bash 
+.fi
+.RE
+.RE
+.SH "SEE ALSO"
+cgset(1)
+chroot(8)
+ionice(1)
+mount(1)
+nice(1)
+su(1)
+unshare(1)
+
