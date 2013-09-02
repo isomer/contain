@@ -39,9 +39,12 @@ static void change_user(void)
 	if (setgid(group->gr_gid) == -1) 
 	    err(1, "setgid(%d)", group->gr_gid);
     } else
-	if (user)
+	if (user) {
 	    if (initgroups(user->pw_name, user->pw_gid) == -1)
 		err(1, "initgroups(%s, %d)", user->pw_name, user->pw_gid);
+            if (setgid(user->pw_gid) == -1)
+                err(1, "setgid(%d)", user->pw_gid);
+        }
 
     if (user) {
 	if (setuid(user->pw_uid) == -1)
