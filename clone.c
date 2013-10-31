@@ -56,13 +56,20 @@ static int child_start(void *dummy)
 {
     if (hostname)
 	sethostname(hostname, strlen(hostname));
-    do_nice();
-    do_ioprio();
-    do_cgroup();
-    do_chroot();
-    do_selinux();
-    do_prctl();
-    do_capabilities();
+    if (do_nice() == -1)
+        err(1, "nice");
+    if (do_ioprio() == -1)
+        err(1, "ioprio");
+    if (do_cgroup() == -1)
+        err(1, "cgroup");
+    if (do_chroot() == -1)
+        err(1, "chroot");
+    if (do_selinux() == -1)
+        err(1, "selinux");
+    if (do_prctl() == -1)
+        err(1, "prctl");
+    if (do_capabilities() == -1)
+        err(1, "capabilities");
     change_user();
     execvp(argv[0], argv);
     err(1, "execlv(%s)", argv[0]);
