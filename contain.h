@@ -8,7 +8,7 @@ extern struct argp chroot_argp; /* 106x */
 extern struct argp clone_argp;  /* 105x */ 
 extern struct argp ioprio_argp; /* 101x */
 extern struct argp nice_argp;   /* 102x */
-extern struct argp prctl_argp;
+extern struct argp prctl_argp;  /* 107x */
 extern struct argp rlimit_argp; /* 103x 104x */
 extern struct argp selinux_argp;
 

@@ -250,6 +250,13 @@ This starts the task inside a named SELinux context.
 .IP "\-\-noroot"
 This makes it so that setuid root programs will not acquire any extra
 priviledges.
+.
+.IP "\-\-nonewprivs"
+Disallow the program from acquiring new privileges via the execve(2) syscall
+(eg by setuid or setgid permission bits on the file, or by file capabilities).
+See the kernel source file Documentation/prctl/no_new_privs.txt for more
+information.
+.
 .IP "\-\-cap=[\fI+\fP|\fI\-\fP]\fIcap\fP[,\fIcap...\fP]"
 Specifies the bounding set of capabilities for processes in this container.
 If specified with a leading + then processes can only achieve the capabilities
