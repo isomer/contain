@@ -19,7 +19,7 @@ int main(int argc, char *argv[])
 	/* TODO: If we get a SIGTERM, we should try and clean up our children.
 	 * By sending SIGTERM, SIGKILL etc
 	 */
-			
+
 	/* Wait for all children to exit */
 	while (wait(NULL) == -1 && errno != ECHILD)
 		;

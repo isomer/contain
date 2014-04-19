@@ -14,9 +14,9 @@ static char doc[] =
     "Program to flexibly create a new container and run a process";
 
 static struct argp_option options[] = {
-    {"verbose", 'v', 	0,  	 0, "Produce verbose output", 0 },
-    {"name",    'n', 	"NAME",  0, "Name of the container", 0 },
-    {NULL,       0,     0,  	 0, NULL, 0 }};
+    {"verbose", 'v',    0,	 0, "Produce verbose output", 0 },
+    {"name",    'n',	"NAME",  0, "Name of the container", 0 },
+    {NULL,       0,     0,	 0, NULL, 0 }};
 
 static bool verbose = false;
 const char *name = NULL;
@@ -53,7 +53,7 @@ static struct argp_child argp_children[] = {
     { NULL, 0, NULL, 0 },
 };
 
-static struct argp argp = { options, parse_opt, "commandline", doc, 
+static struct argp argp = { options, parse_opt, "commandline", doc,
 				argp_children, 0, 0 };
 
 

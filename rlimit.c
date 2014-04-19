@@ -12,11 +12,11 @@
 
 #define RLIMIT_OPTION(name, id, unit, comment) \
     {name, RLIMIT_ID(id, 0), unit, 0, comment, 0}, \
-    {"max-" name, RLIMIT_ID(id, 1), unit, 0, comment, 0}, 
+    {"max-" name, RLIMIT_ID(id, 1), unit, 0, comment, 0},
 
 
 static struct argp_option rlimit_options[] = {
-    RLIMIT_OPTION("virtual-memory", RLIMIT_AS, "bytes", 
+    RLIMIT_OPTION("virtual-memory", RLIMIT_AS, "bytes",
 		    "Set process maximum virtual memory size")
     RLIMIT_OPTION("core-size", RLIMIT_CORE, "bytes",
 		    "Set maximum core dump size")
@@ -51,7 +51,7 @@ static void update_limit(int limit_type, const char *limit, bool hard)
     int i;
     rlim_t value;
     if (!strcasecmp(limit, "unlimited") || !strcasecmp(limit, "infinity"))
-	value = RLIM_INFINITY;  
+	value = RLIM_INFINITY;
     else {
 	char *endptr;
 	if (!*limit)
@@ -97,7 +97,7 @@ static error_t parse_rlimit_opt(int key, char *arg, struct argp_state *state)
     return 0;
 }
 
-struct argp rlimit_argp = { 
+struct argp rlimit_argp = {
     rlimit_options, parse_rlimit_opt, "", "Nice Priority", 0, 0, 0 };
 
 int do_rlimit(void)
