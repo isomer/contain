@@ -21,11 +21,11 @@ static struct argp_option chroot_options[] = {
 };
 
 struct mounts_t {
-    enum { 
-	    MOUNT_BIND, 
-	    MOUNT_UNMOUNT, 
-	    MOUNT_MOVE, 
-	    MOUNT_MOUNT, 
+    enum {
+	    MOUNT_BIND,
+	    MOUNT_UNMOUNT,
+	    MOUNT_MOVE,
+	    MOUNT_MOUNT,
 	    MOUNT_PIVOT } type;
     const char *source;
     const char *target;
@@ -182,7 +182,7 @@ int do_chroot(void)
 	    case MOUNT_MOUNT:
 		if (mount(it->source, target2root(it->target), it->fstype, 
 					it->flags, it->data) == -1)
-	  	    err(1, "Unable to mount %s=%s (%s%s)", it->target,
+		    err(1, "Unable to mount %s=%s (%s%s)", it->target,
 			it->source, it->fstype, it->data);
 		break;
 	    case MOUNT_PIVOT:
