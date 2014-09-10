@@ -4,9 +4,11 @@
 #include <sys/stat.h>
 #include <argp.h>
 #include <fcntl.h>
+#include <grp.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include <pwd.h>
 
 static struct argp_option id_options[] = {
     {"mapuid", 1080, "newuid[:endnewuid]=olduid", 0,
@@ -38,32 +40,70 @@ static struct idmap_t *allocate_id(struct idmap_t **id_head,
 }
 
 
+static int lookup_user(const char *username, size_t len)
+{
+    struct passwd pw, *ppw;
+    size_t buflen = sysconf(_SC_GETPW_R_SIZE_MAX);
+    char buf[buflen];
+    char *st = strndup(username, len);
+    if (getpwnam_r(st, &pw, buf, buflen, &ppw) || !ppw) {
+        errno = 0;
+        int ret = strtol(st, NULL, 0);
+        if (errno)
+            ret = -1;
+        free(st);
+        return ret;
+    }
+    free(st);
+    return ppw->pw_uid;
+}
+
+
+static int lookup_group(const char *groupname, size_t len)
+{
+    struct group gr, *pgr;
+    size_t buflen = sysconf(_SC_GETPW_R_SIZE_MAX);
+    char buf[buflen];
+    char *st = strndup(groupname, len);
+    if (getgrnam_r(groupname, &gr, buf, buflen, &pgr) || !pgr) {
+        errno = 0;
+        int ret = strtol(st, NULL, 0);
+        if (errno)
+            ret = -1;
+        free(st);
+        return ret;
+    }
+    free(st);
+    return pgr->gr_gid;
+}
+
+
 static void add_item(struct argp_state *state, char *arg,
-        struct idmap_t **head, struct idmap_t **tail, char *name)
+        struct idmap_t **head, struct idmap_t **tail, const char *name,
+        int (*lookup_name)(const char *name, size_t len)
+        )
 {
     struct idmap_t *tmp;
     char *dot, *dot2;
+
     tmp = allocate_id(head, tail);
     errno = 0;
-    tmp->idstart = strtol(arg, &dot, 10);
-    if (errno != 0)
-        argp_failure(state, 1, 0, "Expected start id in %s map", name);
-    if (*dot == '-') {
-        tmp->idend = strtol(dot+1, &dot2, 10);
-        if (errno != 0)
-            argp_failure(state, 1, 0, "Expected end id in %s map", name);
-        dot = dot2;
-    }
-    else
-        tmp->idend = tmp->idstart;
-    if (*dot != '=')
+    dot = strchr(arg, ':');
+    dot2 = strchr(arg, '=');
+
+    if (!dot2 || dot2 <= arg)
         argp_failure(state, 1, 0, "Expected = in %s map", name);
-    tmp->oldid = strtol(dot+1, &dot2, 10);
-    if (errno != 0)
-        argp_failure(state, 1, 0, "Expected old id in %s map", name);
-    if (*dot2 != '\0')
-        argp_failure(state, 1, 0, "Extra cruft after old id in %s map (%s)",
-                name, dot2);
+
+    if (dot && dot < dot2) {
+        tmp->idstart = lookup_name(arg, dot - arg);
+        tmp->idend = lookup_name(dot + 1, dot2 - (dot +1));
+    }
+    else {
+        tmp->idstart = lookup_name(arg, dot2 - arg);
+        tmp->idend = tmp->idstart;
+    }
+
+    tmp->oldid = lookup_name(dot2 + 1, strlen(dot2) + 1);
 }
 
 
@@ -71,10 +111,12 @@ static error_t parse_id_options(int key, char *arg, struct argp_state *state)
 {
     switch(key) {
         case 1080:
-            add_item(state, arg, &uidmap_head, &uidmap_tail, "uid");
+            add_item(state, arg, &uidmap_head, &uidmap_tail, "uid",
+                    lookup_user);
             break;
         case 1081:
-            add_item(state, arg, &gidmap_head, &gidmap_tail, "gid");
+            add_item(state, arg, &gidmap_head, &gidmap_tail, "gid",
+                    lookup_group);
             break;
         default:
             return ARGP_ERR_UNKNOWN;
