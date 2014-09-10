@@ -192,7 +192,7 @@ presented on the command line.
 .RE
 .
 .IP "\-\-unmount \fIpath\fP"
-This will unmount a path.  
+This will unmount a path.
 Unlike other commands, the \fIpath\fP is \fBnot\fP relative to the path given
 to the \-\-chroot option if given, this is because you may want to unmount
 filesystems given outside of the chroot.
@@ -208,7 +208,7 @@ relative to any chroots specified.
 All bind, mount, move, unmount and pivot\-root commands are executed in order
 presented on the command line.
 .
-.SS "Priotisation"
+.SS "Priortisation"
 .IP "\-\-iobe \fIpriority\fP"
 This sets the IO priority of the process to "best effort" with a priority
 between 0 and 7 with lower levels being higher priority.  Tasks with the
@@ -337,7 +337,7 @@ sudo ./contain  \\
 \-\-limit=devices.deny=a    \\
 \-\-cap=net_admin,net_bind_service,net_raw,setgid,setuid,sys_ptrace \\
 \-\-noroot      \\
-\-\- /bin/bash 
+\-\- /bin/bash
 .fi
 .RE
 .RE
