@@ -2,8 +2,8 @@
 .SH NAME
 contain \- Create a Linux container and run a program inside it.
 .SH SYNOPSIS
-.B contain 
-.B [\-\-bind \fItargetpath\fP=\fIorigpath\fP] 
+.B contain
+.B [\-\-bind \fItargetpath\fP=\fIorigpath\fP]
 .B [\-\-cap=[\fI+\fP|\fI\-\fP]\fIcap\fP[,\fIcap...\fP]
 .B [\-\-chroot \fIpath\fP]
 .B [\-\-context \fIcontext\fP]
@@ -14,6 +14,8 @@ contain \- Create a Linux container and run a program inside it.
 .B [\-\-ioidle]
 .B [\-\-iort \fIpriority\fP]
 .B [\-\-limit \fIcontroller\fP.\fIresource\fP=\fIvalue\fP]
+.B [\-\-mapuid \fInewuser\fP[\fI:endnewuser\fP]=\fIolduser\fP
+.B [\-\-mapgid \fInewgrop\fP[\fI:endnewgroup\fP]=\fIoldgroup\fP
 .B [\-\-move \fItargetpath\fP=\fIsourcepath\fP]
 .B [\-\-mount \fItargetpath\fP=\fIsourcepath\fP,\fIfstype\fP,\fIflags\fP,\
 \fIoptions\fP]
@@ -29,7 +31,7 @@ contain \- Create a Linux container and run a program inside it.
 .B \fIprogram\fP \fIargs...\fP
 
 .SH DESCRIPTION
-contain is a program for configuring a Linux container.  
+contain is a program for configuring a Linux container.
 Linux containers are made up from multiple different underlying tools (such as
 cgroups and namespaces.
 Configuration is provided by a myriad of command line options, as many or as
@@ -47,16 +49,16 @@ the namespace.
 .IP "\-\-newnet"
 Creates a new networking namespace.
 This creates a new natworking namespace, with a new "lo" interface, and nothing
-else. 
+else.
 .
 .IP "\-\-newmount"
 Creates a new mount namespace.
 Processes within this namespace can see different mounts to processes living
-outside this namespace.  
+outside this namespace.
 Most useful in conjunction with the "Filesystem options" documented below.
 .
 .IP "\-\-newpid"
-Creates a new PID namespace.  
+Creates a new PID namespace.
 The command you run becomes the new "init" process for the namespace and will
 have pid 1 as seen from inside the container.
 When this command exits the kernel will tear down all the processes in this
@@ -92,7 +94,7 @@ groups properly.
 .IP "\-\-bind \fItargetpath\fP=\fIorigpath\fP"
 Bind mount \fIorigpath\fP on top of \fItargetpath\fP.
 This is handy to make directories outside of a chroot available inside the
-chroot.  
+chroot.
 Note that if a chroot is specified, then \fItargetpath\fP is relative to
 the chroot, where as \fIorigpath\fP is relative to the root outside of contain.
 All bind, mount, move, unmount and pivot\-root commands are executed in order
@@ -300,6 +302,26 @@ Sets the maximum processes a user can create simultaneously.
 .IP "\-\-stack \fIbytes\fP"
 .IP "\-\-max\-stack \fIbytes\fP"
 Sets the maximum memory size of the process stack.
+.
+.SS "ID Mapping"
+.IP "\-\-mapuid \fInewuser\fP=\fIolduser\fP"
+.IP "\-\-mapuid \fInewuserbegin:newuserend\fP=\fIolduserbegin\fP"
+When used with \-\-newuser this allows changing the mapping of userids.
+The second form specifies a range of users to be remapped.  Users will be
+remapped from newuserbegin to newuserend (inclusive) to olduserbegin to
+olduserbegin + (newuserend - newuserbegin).  The kernel normally only allows
+for 5 ranged maps.  Users that are not mapped are mapped instead to the uid
+specified in /proc/sys/kernel/overflowuid.  Users can be specified by name
+or by number.
+.IP "\-\-mapgid \fInewgroup\fP=\fIoldgroup\fP"
+.IP "\-\-mapgid \fInewgroupbegin:newgroupend\fP=\fIoldgroupbegin\fP"
+When used with \-\-newuser this allows changing the mapping of groupids.
+The second form specifies a range of groups to be remapped.  Users will be
+remapped from newgroupbegin to newgroupend (inclusive) to oldgroupbegin to
+oldgroupbegin + (newgroupend - newgroupbegin).  The kernel normally only allows
+for 5 ranged maps.  Users that are not mapped are mapped instead to the gid
+specified in /proc/sys/kernel/overflowgid.  Users can be specified by name
+or by number.
 .
 .SH "EXIT STATUS"
 contain returns the exit of the process executed process (unless \-\-detach
