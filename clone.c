@@ -9,6 +9,7 @@
 #include <grp.h>
 #include <pwd.h>
 #include <sched.h>
+#include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -36,7 +37,7 @@ static bool detach = false;
 static void change_user(void)
 {
     if (group) {
-	if (setgid(group->gr_gid) == -1) 
+	if (setgid(group->gr_gid) == -1)
 	    err(1, "setgid(%d)", group->gr_gid);
     } else
 	if (user) {
@@ -99,7 +100,7 @@ parse_clone_opt(int key, char *arg, struct argp_state *state)
 	case 'M': new_ns = true; break;
 	case 'P': new_pid = true; break;
 	case 'U': new_uts = true; break;
-	case 'u': 
+	case 'u':
 	    user = getpwnam(arg);
 	    if (!user)
 		argp_failure(state, 1, errno, "Unknown user %s", arg);
@@ -128,13 +129,19 @@ parse_clone_opt(int key, char *arg, struct argp_state *state)
 	    if(!argv)
 		argp_usage(state);
 	    if(group && !user)
-		argp_failure(state, 1, 0, 
+		argp_failure(state, 1, 0,
 			    "If you specify a group, you must specify a user");
 	    if (hostname && !new_uts)
 		argp_failure(state, 1, 0,
 			"You must create a new uts namespace with hostname");
+            if (new_user && !user) {
+                user = getpwuid(getuid());
+                if (!user)
+                    argp_failure(state, 1, 0,
+                            "User not specified, and you don't exist");
+            }
 	    break;
-	default: 
+	default:
 	    return ARGP_ERR_UNKNOWN;
     }
     return 0;
@@ -169,8 +176,55 @@ int setup_clone(void)
     if (new_user)
 	flags |= CLONE_NEWUSER;
 
-    if (detach) 
-    	daemon(1, 1);
+    if (detach)
+	daemon(true, true);
+
+    /* We have to remap the users independently, because you can't mix
+     * NEW_USER with other namespaces safely.
+     */
+    if ((uidmap_head || gidmap_head) && (flags & CLONE_NEWUSER)) {
+        /* We need another process that still has permissions to take care
+         * of the rewriting of the uid table.
+         */
+        int pipes[2]; /* Pipe used for IPC with helper */
+        int pid;
+        if (pipe(pipes) == -1)
+            err(1, "pipe");
+
+        int ppid;
+        switch (pid = fork()) {
+            case -1:
+                err(1, "fork");
+            case 0: /* Child */
+                /* The child retains it's permissions so it can update the
+                 * parents environment.
+                 */
+                close(pipes[1]);
+                /* Wait until the unshare has completed. */
+                assert(sizeof(ppid) < PIPE_BUF);
+                if (read(pipes[0], &ppid, sizeof(ppid)) != sizeof(ppid))
+                    err(1, "unexpected read on pipe");
+                close(pipes[0]);
+                _exit(do_idmap(ppid));
+            default: /* Parent process... */
+                close(pipes[0]);
+                if (unshare(CLONE_NEWUSER) == -1)
+                    err(1, "unshare(CLONE_NEWUSER)");
+                /* Signal to the helper that we're ready for it to do its
+                 * thing.
+                 */
+                ppid = getpid();
+                if (write(pipes[1], &ppid, sizeof(ppid)) != sizeof(ppid))
+                    err(1, "unexpected write on pipe");
+                close(pipes[1]);
+                /* Wait for the child to have finished creating our
+                 * uid/gid mapping. */
+                if (waitpid(pid, NULL, 0) == -1)
+                    err(1, "waitpid(helper[%d])", pid);
+
+                flags &= ~CLONE_NEWUSER; /* No longer needed. */
+        }
+    }
 
     if (flags & ~(UNSHARE_SUPPORTED_FLAGS|SIGCHLD)) {
 	char *stack = malloc(STACKSIZE);

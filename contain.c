@@ -50,6 +50,7 @@ static struct argp_child argp_children[] = {
     { &prctl_argp, 0, "Security options", 1 },
     { &rlimit_argp, 0, "Ulimit options", 1 },
     { &selinux_argp, 0, "SELinux", 1 },
+    { &idmap_argp, 0, "ID mapping options", 1 },
     { NULL, 0, NULL, 0 },
 };
 
