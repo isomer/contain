@@ -17,6 +17,7 @@ static bool set_nice = false;
 
 static error_t parse_nice_opt(int key, char *arg, struct argp_state *state)
 {
+    (void)state;
     switch(key) {
         case 1020:
             nice_value = atoi(arg);
@@ -28,7 +29,7 @@ static error_t parse_nice_opt(int key, char *arg, struct argp_state *state)
     return 0;
 }
 
-struct argp nice_argp = { 
+struct argp nice_argp = {
     nice_options, parse_nice_opt, "", "Nice Priority", 0, 0, 0 };
 
 int do_nice(void)

@@ -35,6 +35,7 @@ static error_t parse_cap_opt(int key, char *arg, struct argp_state *state)
     bool enable=true;
     char *st;
     char *end;
+    (void)state;
     switch(key) {
 	case 'p':
 	    st = arg;

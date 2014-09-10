@@ -46,6 +46,7 @@ static int ioprio_value = 0;
 
 static error_t parse_ioprio_opt(int key, char *arg, struct argp_state *state)
 {
+    (void)state;
     switch(key) {
         case 1010:
             ioprio_value = IOPRIO_PRIO_VALUE(IOPRIO_CLASS_RT, 0);

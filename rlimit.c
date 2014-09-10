@@ -88,6 +88,7 @@ static void update_limit(int limit_type, const char *limit, bool hard)
 
 static error_t parse_rlimit_opt(int key, char *arg, struct argp_state *state)
 {
+    (void) state;
     if (key < 1030 || key >1049)
 	    return ARGP_ERR_UNKNOWN;
 

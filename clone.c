@@ -55,6 +55,7 @@ static void change_user(void)
 
 static int child_start(void *dummy)
 {
+    (void)dummy;
     if (hostname)
 	sethostname(hostname, strlen(hostname));
     if (do_nice() == -1)
