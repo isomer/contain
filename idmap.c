@@ -18,6 +18,7 @@ static struct argp_option id_options[] = {
     {NULL, 0, NULL, 0, NULL, 0},
 };
 
+
 struct idmap_t {
     int idstart;
     int idend;
@@ -130,6 +131,9 @@ struct argp idmap_argp = {
 
 static void write_map(struct idmap_t *head, int ppid, const char *map)
 {
+    /* TODO: Sort, and break apart overlapped ranges, and merge consequitive
+     * ranges etc.
+     */
     char filename[1024];
     char *buffer = NULL;
     struct idmap_t *idmap;
